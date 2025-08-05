@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,7 +22,8 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserResponseDto> signup(@RequestBody UserSignupRequestDto request) {
+    public ResponseEntity<UserResponseDto> signup(
+            @Valid @RequestBody UserSignupRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.signup(request));
     }

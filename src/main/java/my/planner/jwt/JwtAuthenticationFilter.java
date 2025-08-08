@@ -25,7 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.equals("/api/users/signup") || path.equals("/api/users/login"); // 필터 적용 안 함
+        return path.equals("/api/users/signup") || path.equals("/api/users/login");
     }
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,8 +35,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // 1. 토큰 없거나 "Bearer "로 시작 안하면 그냥 넘김
+        // 1. 토큰이 없거나 잘못된 형식이면 401 반환
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // 인증이 필요한 URL인지 체크
+            String path = request.getRequestURI();
+            if (requiresAuthentication(path)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                response.setContentType("application/json;charset=UTF-8");
+                return;
+            }
             filterChain.doFilter(request, response);
             return;
         }
@@ -47,8 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 3. 사용자 정보 확인 & SecurityContext에 등록
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByUsername(username)
-                    .orElse(null);
+            User user = userRepository.findByUsername(username).orElse(null);
 
             if (user != null && jwtUtil.isTokenValid(token, username)) {
                 CustomUserDetails userDetails = new CustomUserDetails(user);
@@ -56,11 +62,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                // 토큰은 있는데 잘못된 경우도 401
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                return;
             }
         }
 
-        // 4. 다음 필터로 넘김
         filterChain.doFilter(request, response);
     }
+
+    // 인증이 필요한 URL인지 체크하는 메서드
+    private boolean requiresAuthentication(String path) {
+        // permitAll 한 URL들은 제외
+        return !(path.equals("/api/users/signup")
+                || path.equals("/api/users/login")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs"));
+    }
+
 
 }

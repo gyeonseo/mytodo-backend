@@ -5,13 +5,12 @@ import my.planner.dto.user.LoginRequest;
 import my.planner.dto.user.LoginResponse;
 import my.planner.dto.user.UserResponseDto;
 import my.planner.dto.user.UserSignupRequestDto;
+import my.planner.jwt.CustomUserDetails;
 import my.planner.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 @RestController
@@ -33,4 +32,10 @@ public class UserController {
         return ResponseEntity.ok(userService.login(request));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        UserResponseDto userResponse = userService.getUserByUsername(username);
+        return ResponseEntity.ok(userResponse);
+    }
 }

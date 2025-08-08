@@ -8,6 +8,7 @@ import my.planner.dto.user.UserResponseDto;
 import my.planner.dto.user.UserSignupRequestDto;
 import my.planner.jwt.JwtUtil;
 import my.planner.repository.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,7 @@ public class UserService {
             throw new IllegalArgumentException("이미 존재하는 사용자입니다.");
         }
 
-        String encodedPassword = passwordEncoder.encode(request.getPassword()); // ✅ 암호화
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
         User user = new User(request.getUsername(), encodedPassword);
         userRepository.save(user);
 
@@ -45,5 +46,11 @@ public class UserService {
         return new LoginResponse(token);
     }
 
+
+    public UserResponseDto getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> new UserResponseDto(user.getId(), user.getUsername()))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 }
 

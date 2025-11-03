@@ -13,10 +13,17 @@ import java.util.Optional;
 
 public interface TodoStatusRepository extends JpaRepository<TodoStatus, Long> {
 
-    @Query("SELECT t FROM TodoStatus t WHERE t.category.id = :categoryId AND YEAR(t.date) = :year AND MONTH(t.date) = :month")
-    List<TodoStatus> findByCategoryIdAndMonth(@Param("categoryId") Long categoryId,
-                                              @Param("year") int year,
-                                              @Param("month") int month);
+    @Query("""
+    SELECT t
+    FROM TodoStatus t
+    WHERE t.category.id = :categoryId
+      AND t.date >= :startDate
+      AND t.date < :endDate
+""")
+    List<TodoStatus> findByCategoryIdAndDateRange(@Param("categoryId") Long categoryId,
+                                                  @Param("startDate") LocalDate startDate,
+                                                  @Param("endDate") LocalDate endDate);
+
 
     Optional<TodoStatus> findByCategoryAndDate(Category category, LocalDate date);
 }

@@ -1,6 +1,5 @@
 package my.planner.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import my.planner.domain.Category;
 import my.planner.domain.TodoStatus;
@@ -10,6 +9,7 @@ import my.planner.dto.calendar.TodoStatusRequest;
 import my.planner.repository.CategoryRepository;
 import my.planner.repository.TodoStatusRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -24,25 +24,31 @@ public class CalendarService {
     private final TodoStatusRepository todoStatusRepository;
     private final CategoryRepository categoryRepository;
 
+    // 조회는 readOnly로
+    @Transactional(readOnly = true)
     public List<TodoStatusDto> getCalendar(Long categoryId, int year, int month) {
-        // 해당 연월의 날짜 리스트 생성
-        List<LocalDate> dates = generateDates(year, month);
+        // 조회 범위 계산 (해당 월 1일 ~ 다음 달 1일 미만)
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDate start = ym.atDay(1);
+        LocalDate end   = ym.plusMonths(1).atDay(1);
 
-        // DB에서 해당 카테고리의 날짜 상태 가져오기
+        // 범위 조건으로 한번에 조회 (인덱스 타게)
         List<TodoStatus> savedStatuses =
-                todoStatusRepository.findByCategoryIdAndMonth(categoryId, year, month);
+                todoStatusRepository.findByCategoryIdAndDateRange(categoryId, start, end);
+
+        // 해당 월의 날짜 리스트 생성
+        List<LocalDate> dates = generateDates(year, month);
 
         // 날짜별 상태 매핑
         Map<LocalDate, Status> statusMap = savedStatuses.stream()
                 .collect(Collectors.toMap(TodoStatus::getDate, TodoStatus::getStatus));
 
-        // DTO 변환 (없는 날짜는 NONE 처리)
+        // DTO 변환 (없는 날짜는 NONE)
         return dates.stream()
                 .map(date -> new TodoStatusDto(date, statusMap.getOrDefault(date, Status.NONE)))
                 .collect(Collectors.toList());
     }
 
-    // 한 달짜리 날짜 리스트 생성
     private List<LocalDate> generateDates(int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
         return IntStream.rangeClosed(1, yearMonth.lengthOfMonth())
@@ -69,3 +75,4 @@ public class CalendarService {
         }
     }
 }
+

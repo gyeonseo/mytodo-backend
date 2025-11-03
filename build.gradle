@@ -1,3 +1,5 @@
+import java.util.Locale
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.3'
@@ -38,7 +40,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
-	// runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -48,3 +49,41 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// React 프로젝트 위치 (package.json 이 들어있는 곳)
+def frontendDir = "$projectDir/src/main/frontend"
+
+// OS별 npm 명령어
+def isWindows = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')
+def npmCmd = isWindows ? 'npm.cmd' : 'npm'
+
+// 1) node_modules 설치 (lockfile 기준으로 재현성)
+tasks.register('npmInstall', Exec) {
+	workingDir frontendDir
+	commandLine npmCmd, 'ci'
+	inputs.files("$frontendDir/package.json", "$frontendDir/package-lock.json")
+	outputs.dir("$frontendDir/node_modules")
+	group = BasePlugin.BUILD_GROUP
+}
+
+// 2) React 빌드
+tasks.register('npmBuild', Exec) {
+	dependsOn 'npmInstall'
+	workingDir frontendDir
+	commandLine npmCmd, 'run', 'build', '--', '--mode', 'production'
+	inputs.dir("$frontendDir/src")
+	inputs.files("$frontendDir/package.json", "$frontendDir/package-lock.json")
+	outputs.dir("$frontendDir/dist")
+	group = BasePlugin.BUILD_GROUP
+}
+
+// 3) 스프링 리소스 처리 시 React 빌드 결과를 JAR 안에 포함
+tasks.named('processResources') {
+	dependsOn 'npmBuild'
+	from("$frontendDir/dist") { // 'build'를 'dist'로 변경
+		into 'static'
+	}
+}
+
+
+

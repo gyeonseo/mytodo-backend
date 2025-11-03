@@ -12,9 +12,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Getter
 @Entity
+@Table(name = "todoStatus")
 public class TodoStatus {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private LocalDate date; // 예: 2025-07-18
@@ -22,7 +23,8 @@ public class TodoStatus {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     public TodoStatus(LocalDate requestDate, Status newStatus, Category category) {
@@ -34,4 +36,5 @@ public class TodoStatus {
     public void updateStatus(Status status) {
         this.status = status;
     }
+    // status에 대한 Setter 나중에 없애기
 }

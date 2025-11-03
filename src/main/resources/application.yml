@@ -1,14 +1,12 @@
 spring:
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   jpa:
     hibernate:
-      ddl-auto: update # or create
+      ddl-auto: create # or create
     properties:
       hibernate:
-        #show_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        show_sql: false
         format_sql: true
 logging.level:
-  org.hibernate.SQL: debug
+  org.hibernate.SQL: off
+  com.p6spy: info            # p6spy 로그만 남김

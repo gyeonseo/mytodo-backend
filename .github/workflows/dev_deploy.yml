@@ -69,7 +69,7 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "
             pgrep java | xargs -r kill -15
             sleep 5
-            nohup java -jar /home/$EC2_USERNAME/app.jar --spring.profiles.active=dev > app.log 2>&1 &
+            nohup java -jar /home/$EC2_USERNAME/umc7thServer.jar --spring.profiles.active=dev > app.log 2>&1 &
           
           "
           rm -f private_key.pem  # 민감한 정보 삭제

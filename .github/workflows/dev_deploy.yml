@@ -60,7 +60,7 @@ jobs:
           echo "$EC2_SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
           
-          JAR_FILE=$(ls ./deploy/*.jar | grep -v 'plain' | head -n 1)
+          JAR_FILE=$(ls build/libs/*.jar | grep -v 'plain' | head -n 1)
           
           jar_file=$(find build/libs -name '*.jar' ! -name '*plain.jar' | head -n 1)
           
